@@ -1,0 +1,248 @@
+<!-- @format -->
+<html>
+  <head>
+    <script src="./js/jquery.js"></script>
+    <script src="./js/axios.min.js"></script>
+  </head>
+  <body>
+    <div>
+      <h3>Add a new compressor</h3>
+      <form>
+        <div>
+          <label>Brand</label>
+          <input id="brand" type="text" />
+        </div>
+        <div>
+          <label>Model</label>
+          <input id="model" type="text" />
+        </div>
+        <div>
+          <label>Horse Power</label>
+          <input id="horsePower" type="text" />
+        </div>
+        <button id="save">Save</button>
+      </form>
+      <div>
+        <button id="clearBtn">Clear database</button>
+      </div>
+      <hr />
+    </div>
+    <div>
+      <form>
+        <div>
+          <label>Find a compressor</label><br />
+          <input id="search" placeholder="model number" type="search" />
+          <button id="search_btn">Search</button>
+        </div>
+      </form>
+      <div class="compressor-list">
+        <table id="table">
+          <thead>
+            <tr>
+              <th>Brand</th>
+              <th>Model</th>
+              <th>HorsePower</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr>
+              <td>Samsung</td>
+              <td>xyz355</td>
+              <td>1/5</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+  <script>
+    const tbody = $("#tbody");
+    const search_dom = $("#search");
+    const search_btn = $("#search_btn");
+    const saveBtn = $("#save");
+    const clearBtn = $("#clearBtn");
+
+    let compressors = getLocalData();
+
+    //search by char patten
+    search_dom.on("keyup", (e) => {
+      const patten = e.target.value;
+      const filteredCompressors = compressors.filter((compressor) => {
+        if (compressor.model.includes(patten)) {
+          return true;
+        }
+      });
+
+      renderCompressors(filteredCompressors);
+    });
+
+    //onSave
+    saveBtn.on("click", (e) => {
+      e.preventDefault();
+      const brand = $("#brand").val();
+      const model = $("#model").val();
+      const horsePower = $("#horsePower").val();
+
+      const compressor = {
+        brand,
+        model,
+        horsePower,
+      };
+
+      const foundCompressor = compressors.find((comp, index) => {
+        if (comp.model == model) {
+          compressor.brand = brand;
+          compressor.horsePower = horsePower;
+
+          compressors[index] = compressor;
+          return true;
+        }
+      });
+
+      if (!foundCompressor) {
+        compressors.push(compressor);
+        savelocaly(compressors);
+      }
+
+      renderCompressors(compressors);
+    });
+
+    //renderCompressors
+    const renderCompressors = (compressors) => {
+      let content = "";
+      compressors.forEach((compressor) => {
+        content += `
+                   <tr>
+                               <td>${compressor.brand}</td>
+                               <td>${compressor.model}</td>
+                               <td>${compressor.horsePower}</td>
+                            </tr>
+                   `;
+      });
+      tbody.html(content);
+    };
+    renderCompressors(compressors);
+
+    //savelocaly
+    const savelocaly = (compressors) => {
+      compressorsToSave = JSON.stringify(compressors);
+      localStorage.setItem("compressors", compressorsToSave);
+
+      renderCompressors(compressors);
+      console.log(`saved` + localStorage.getItem("compressors"));
+    };
+
+    //local data
+    function getLocalData() {
+      const data = localStorage.getItem("compressors");
+      let compressors = [];
+      if (data !== "undefined") {
+        compressors = JSON.parse(data);
+      }
+
+      if (Array.isArray(compressors)) {
+        return compressors;
+      } else {
+        return [];
+      }
+    }
+
+    clearBtn.on("click", (e) => {
+      e.preventDefault();
+      localStorage.removeItem("compressors");
+      compressors = [];
+      renderCompressors(compressors);
+    });
+
+    //sync data
+    async function getOnlineData() {
+      const url = "https://igot-compressor.herokuapp.com/";
+      try {
+        const response = await axios.get(url);
+        const comps = response.data;
+
+        const localData = getLocalData();
+        const externalData = comps;
+        //merge data
+        const combinedCompressors = [...localData, ...externalData];
+
+        compressors = removeDuplicateByModel(combinedCompressors);
+
+        savelocaly(compressors);
+
+        console.log("synced to local");
+      } catch (error) {
+        if (error.request) {
+          console.log("no internet connection");
+        }
+
+        console.log(error.message);
+      }
+    }
+
+    async function saveDataOnline(compressors) {
+      try {
+        if (Array.isArray(compressors) && compressors.length < 1) {
+          throw new Error("the array is  empty");
+        }
+
+        const url = "https://igot-compressor.herokuapp.com/save";
+        const config = {
+          url,
+          data: compressors,
+          method: "POST",
+        };
+        const { data } = await axios(config);
+        const response = data;
+        if (response.sucess !== true) {
+          throw new Error(response.message);
+        }
+
+        console.log("data sent success");
+      } catch (error) {
+        console.log(error.message);
+      }
+    }
+
+    //removeDuplicateByModel
+    function removeDuplicateByModel(array) {
+      const uniqueModels = [];
+      const unique = array.filter((element) => {
+        const isDuplicate = uniqueModels.includes(element.model);
+
+        if (!isDuplicate) {
+          uniqueModels.push(element.model);
+
+          return true;
+        }
+
+        return false;
+      });
+      return unique;
+    }
+
+    //removeDuplicateById
+    function removeDuplicateById(array) {
+      const uniqueIds = [];
+      const unique = array.filter((element) => {
+        const isDuplicate = uniqueIds.includes(element.id);
+
+        if (!isDuplicate) {
+          uniqueIds.push(element.id);
+
+          return true;
+        }
+
+        return false;
+      });
+      return unique;
+    }
+
+    const sync = async () => {
+      await saveDataOnline(compressors);
+      await getOnlineData();
+    };
+
+    sync();
+  </script>
+</html>
