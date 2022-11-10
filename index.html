@@ -66,7 +66,7 @@
 
     //search by char patten
     search_dom.on("keyup", (e) => {
-      const patten = e.target.value;
+      const patten = e.target.value.trim().toLocaleUpperCase();
       const filteredCompressors = compressors.filter((compressor) => {
         if (compressor.model.includes(patten)) {
           return true;
@@ -80,7 +80,7 @@
     saveBtn.on("click", (e) => {
       e.preventDefault();
       const brand = $("#brand").val();
-      const model = $("#model").val();
+      const model = $("#model").val().trim().toLocaleUpperCase();
       const horsePower = $("#horsePower").val();
 
       const compressor = {
