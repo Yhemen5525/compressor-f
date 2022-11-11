@@ -162,6 +162,7 @@
           compressor.horsePower = horsePower;
 
           compressors[index] = compressor;
+          
           return true;
         }
       });
@@ -170,7 +171,8 @@
         compressors.push(compressor);
         savelocaly(compressors);
       }
-
+      
+      loading_dom.html(`saved ${compressor.model}`)
       renderCompressors(compressors);
     });
 
