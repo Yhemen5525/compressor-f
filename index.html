@@ -1,47 +1,60 @@
 <!-- @format -->
 <html>
   <head>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Allerta"
+    />
+    <link href="./css/main.css" rel="stylesheet" />
     <script src="./js/jquery.js"></script>
     <script src="./js/axios.min.js"></script>
   </head>
   <body>
-    <div>
-      <h3>Add a new compressor</h3>
-      <form>
-        <div>
-          <label>Brand</label>
-          <input id="brand" type="text" />
-        </div>
-        <div>
-          <label>Model</label>
-          <input id="model" type="text" />
-        </div>
-        <div>
-          <label>Horse Power</label>
-          <input id="horsePower" type="text" />
-        </div>
-        <button id="save">Save</button>
-      </form>
+    <div class="not-allowed" id="settings">
       <div>
-        <button id="clearBtn">Clear database</button>
+        <h3>Add a new compressor</h3>
+        <form>
+          <div>
+            <label>Brand</label>
+            <input id="brand" type="text" />
+          </div>
+          <div>
+            <label>Model</label>
+            <input id="model" type="text" />
+          </div>
+          <div>
+            <label>Horse Power</label>
+            <input id="horsePower" type="text" />
+          </div>
+          <button id="save">Save</button>
+        </form>
+        <div>
+          <button id="clearBtn">Clear database</button>
+        </div>
+        <hr />
       </div>
-      <hr />
+    </div>
+    <div id="icon-container">
+      <img src="./images/settings.png" /> enable settings
     </div>
     <div>
-      <form>
-        <div>
-          <label>Find a compressor</label><br />
-          <input id="search" placeholder="model number" type="search" />
-          <button id="search_btn">Search</button>
-        </div>
-      </form>
-      <div class="compressor-list">
+      <div id="header">
+        <h3 id="title">Find Fridge Compressor's Horse Power by Model Number</h3>
+        <form id="search-form">
+          <div>
+            <input id="search" placeholder="model number" type="search" />
+          </div>
+        </form>
+      </div>
+
+      <div id="compressor-container" class="compressor-list">
         <table id="table">
           <thead>
             <tr>
               <th>Brand</th>
               <th>Model</th>
               <th>HorsePower</th>
+              <th class="not-allowed">delete</th>
             </tr>
           </thead>
           <tbody id="tbody">
@@ -49,6 +62,9 @@
               <td>Samsung</td>
               <td>xyz355</td>
               <td>1/5</td>
+              <th class="not-allowed">
+                <button class="deleteItem">delete</button>
+              </th>
             </tr>
           </tbody>
         </table>
@@ -61,8 +77,34 @@
     const search_btn = $("#search_btn");
     const saveBtn = $("#save");
     const clearBtn = $("#clearBtn");
+    const iconContainer = $("#icon-container");
+    let admin = false;
+    let counter = 0;
 
     let compressors = getLocalData();
+
+    iconContainer.on("click", () => {
+      if (counter < 7) {
+        admin = false;
+        hideSettings();
+        alert("You can't modify the records");
+      } else {
+        admin = true;
+        $(".not-allowed").show();
+        // alert("modification now allowed");
+      }
+
+      counter++;
+    });
+
+    function hideSettings() {
+      if (admin == true) {
+        return;
+      }
+      $(".not-allowed").hide();
+      //   alert("not allowed");
+    }
+    hideSettings();
 
     //search by char patten
     search_dom.on("keyup", (e) => {
@@ -107,19 +149,34 @@
       renderCompressors(compressors);
     });
 
+    //on delete
+    function deleteCompressor(e) {
+      const model = e.name;
+      compressors.find((compressor, index) => {
+        if (compressor.model == model) {
+          console.log(compressor);
+          compressors.splice(index, 1);
+          savelocaly(compressors);
+          renderCompressors(compressors);
+        }
+      });
+    }
+
     //renderCompressors
     const renderCompressors = (compressors) => {
       let content = "";
       compressors.forEach((compressor) => {
         content += `
-                   <tr>
-                               <td>${compressor.brand}</td>
-                               <td>${compressor.model}</td>
-                               <td>${compressor.horsePower}</td>
-                            </tr>
-                   `;
+		               <tr>
+		                           <td>${compressor.brand}</td>
+		                           <td>${compressor.model}</td>
+		                           <td>${compressor.horsePower}</td>
+		              <td><button class="not-allowed deleteBtn" name="${compressor.model}" onclick="deleteCompressor(this)"  >delete</button></td>
+		                        </tr>
+		               `;
       });
       tbody.html(content);
+      hideSettings();
     };
     renderCompressors(compressors);
 
