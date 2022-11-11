@@ -8,6 +8,13 @@
     <link href="./css/main.css" rel="stylesheet" />
     <script src="./js/jquery.js"></script>
     <script src="./js/axios.min.js"></script>
+    <style>
+      
+.btn {
+  background: pink;
+}
+
+    </style>
   </head>
   <body>
     <div class="not-allowed" id="settings">
@@ -26,10 +33,13 @@
             <label>Horse Power</label>
             <input id="horsePower" type="text" />
           </div>
-          <button id="save">Save</button>
+          <button id="save" class="btn">Save</button>
         </form>
-        <div>
-          <button id="clearBtn">Clear database</button>
+        <div class="loading"></div>
+        <div id="controls">
+          <button  id="clearBtn" class="btn">Clear local db</button>
+          <button  id="sync-to-local" class="btn">Sync to local</button>
+          <button  id="sync-to-online" class="btn">sync to online</button>
         </div>
         <hr />
       </div>
@@ -78,6 +88,10 @@
     const saveBtn = $("#save");
     const clearBtn = $("#clearBtn");
     const iconContainer = $("#icon-container");
+    const syncToLocal = $("#sync-to-local");
+    const syncToOnline = $("#sync-to-online");
+    const loading_dom = $(".loading");
+    let isloading = false;
     let admin = false;
     let counter = 0;
 
@@ -117,6 +131,17 @@
 
       renderCompressors(filteredCompressors);
     });
+    
+    //sync-to-local
+    syncToLocal.on("click",()=>{
+      getOnlineData();
+    })
+    
+    //sync-to-online
+    syncToOnline.on("click",()=>{
+      saveDataOnline(compressors);
+    })
+
 
     //onSave
     saveBtn.on("click", (e) => {
@@ -171,7 +196,7 @@
 		                           <td>${compressor.brand}</td>
 		                           <td>${compressor.model}</td>
 		                           <td>${compressor.horsePower}</td>
-		              <td><button class="not-allowed deleteBtn" name="${compressor.model}" onclick="deleteCompressor(this)"  >delete</button></td>
+		              <td><button class="not-allowed deleteBtn" name="${compressor.model}" onclick="deleteCompressor(this)" >delete</button></td>
 		                        </tr>
 		               `;
       });
@@ -213,8 +238,10 @@
 
     //sync data
     async function getOnlineData() {
+      
       const url = "https://igot-compressor.herokuapp.com/";
       try {
+         loading_dom.html("loading...")
         const response = await axios.get(url);
         const comps = response.data;
 
@@ -227,18 +254,20 @@
 
         savelocaly(compressors);
 
-        console.log("synced to local");
+        loading_dom.html("synced to local");
       } catch (error) {
+        
         if (error.request) {
-          console.log("no internet connection");
+          loading_dom.html("no internet connection");
         }
 
-        console.log(error.message);
+        loading_dom.html(error.message);
       }
     }
 
     async function saveDataOnline(compressors) {
       try {
+        loading_dom.html("loading...")
         if (Array.isArray(compressors) && compressors.length < 1) {
           throw new Error("the array is  empty");
         }
@@ -255,9 +284,9 @@
           throw new Error(response.message);
         }
 
-        console.log("data sent success");
+        loading_dom.html("data sent success");
       } catch (error) {
-        console.log(error.message);
+        loading_dom.html(error.message);
       }
     }
 
@@ -296,10 +325,12 @@
     }
 
     const sync = async () => {
-      await saveDataOnline(compressors);
-      await getOnlineData();
+      
+    //  await saveDataOnline(compressors);
+     // await getOnlineData();
     };
 
-    sync();
+  //  sync();
+  
   </script>
 </html>
